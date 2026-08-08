@@ -33,9 +33,13 @@
     }
   },
   "6": {
-    "class_type": "FluxKontextImageScale",
+    "class_type": "ImageScale",
     "inputs": {
-      "image": ["5", 0]
+      "image": ["5", 0],
+      "upscale_method": "lanczos",
+      "width": 768,
+      "height": 512,
+      "crop": "disabled"
     }
   },
   "7": {
