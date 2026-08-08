@@ -1,7 +1,0 @@
-runpod_qwen_models:
-  base_path: /runpod-volume
-  diffusion_models: models/diffusion_models/
-  unet: models/diffusion_models/
-  text_encoders: models/text_encoders/
-  clip: models/text_encoders/
-  vae: models/vae/
