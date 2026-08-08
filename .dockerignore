@@ -1,0 +1,5 @@
+.git
+.env
+README.md
+download_models.sh
+__pycache__
