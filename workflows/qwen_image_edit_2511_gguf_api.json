@@ -32,22 +32,12 @@
       "image": "input.png"
     }
   },
-  "6": {
-    "class_type": "ImageScale",
-    "inputs": {
-      "image": ["5", 0],
-      "upscale_method": "lanczos",
-      "width": 768,
-      "height": 512,
-      "crop": "disabled"
-    }
-  },
   "7": {
     "class_type": "TextEncodeQwenImageEditPlus",
     "inputs": {
       "clip": ["3", 0],
       "vae": ["4", 0],
-      "image1": ["6", 0],
+      "image1": ["5", 0],
       "prompt": "Replace the sky with a dramatic sunset while preserving the rest of the image."
     }
   },
@@ -56,14 +46,14 @@
     "inputs": {
       "clip": ["3", 0],
       "vae": ["4", 0],
-      "image1": ["6", 0],
+      "image1": ["5", 0],
       "prompt": ""
     }
   },
   "9": {
     "class_type": "VAEEncode",
     "inputs": {
-      "pixels": ["6", 0],
+      "pixels": ["5", 0],
       "vae": ["4", 0]
     }
   },
