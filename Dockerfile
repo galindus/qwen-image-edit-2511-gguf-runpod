@@ -1,7 +1,7 @@
 FROM runpod/worker-comfyui:5.8.6-base
 
 # Bump this marker to explicitly trigger a GitHub-based Runpod rebuild.
-LABEL org.opencontainers.image.revision="qwen-gguf-20260808-2"
+LABEL org.opencontainers.image.revision="qwen-gguf-20260809-normalvram"
 
 # GGUF loader used by ComfyUI to load the quantized Qwen transformer.
 # `comfy-node-install` only resolves registry package names; clone this
