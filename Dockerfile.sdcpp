@@ -24,4 +24,6 @@ ENV MODEL_ROOT=/runpod-volume/models \
     SDC_LORA=Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
 
 WORKDIR /app
-CMD ["python3", "-u", "/app/handler.py"]
+# The upstream image declares ENTRYPOINT /sd-cli.  Override it: this image is
+# a Runpod worker, not an interactive stable-diffusion.cpp CLI container.
+ENTRYPOINT ["python3", "-u", "/app/handler.py"]
