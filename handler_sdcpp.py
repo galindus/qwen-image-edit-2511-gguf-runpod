@@ -125,6 +125,18 @@ def _request_payload(job_input: dict[str, Any]) -> dict[str, Any]:
             "guidance": {"txt_cfg": cfg, "img_cfg": None, "distilled_guidance": 0.0},
         },
         "lora": [{"path": os.environ["SDC_LORA"], "multiplier": 1.0, "is_high_noise": False}],
+        # Qwen's VAE needs ~5 GB of temporary memory when decoding this image
+        # in one pass.  Tile it by default so Q4 runs safely on a 24 GB GPU.
+        "vae_tiling_params": {
+            "enabled": bool(job_input.get("vae_tiling", True)),
+            "temporal_tiling": False,
+            "tile_size_x": 0,
+            "tile_size_y": 0,
+            "target_overlap": 0.5,
+            "rel_size_x": 0.0,
+            "rel_size_y": 0.0,
+            "extra_tiling_args": "",
+        },
         "output_format": "png",
         "output_compression": 100,
     }
