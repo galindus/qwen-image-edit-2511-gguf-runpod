@@ -37,6 +37,14 @@ aspect ratio, capped to a 1536-pixel longest side; set `width` and `height`
 (multiples of 16) to override it. The first request includes model loading;
 compare only subsequent requests with ComfyUI.
 
+For a closer A/B test with the Comfy workflow, set these endpoint environment
+variables and redeploy. The FP8 encoder has no separate mmproj:
+
+```text
+SDC_TEXT_ENCODER=qwen_2.5_vl_7b_fp8_scaled.safetensors
+SDC_MMPROJ=none
+```
+
 Runpod Serverless ComfyUI worker for Qwen Image Edit 2511 on a 24 GB GPU.
 
 ## Runtime

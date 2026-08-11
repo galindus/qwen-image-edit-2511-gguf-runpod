@@ -48,7 +48,6 @@ def _start_server() -> None:
             "--diffusion-model", _model_path("diffusion_models", os.environ["SDC_TRANSFORMER"]),
             "--vae", _model_path("vae", os.environ["SDC_VAE"]),
             "--llm", _model_path("text_encoders", os.environ["SDC_TEXT_ENCODER"]),
-            "--llm_vision", _model_path("text_encoders", os.environ["SDC_MMPROJ"]),
             "--lora-model-dir", os.path.join(MODEL_ROOT, "loras"),
             "--diffusion-fa",
             "--model-args", "qwen_image_zero_cond_t=true",
@@ -56,6 +55,12 @@ def _start_server() -> None:
             "--listen-port", str(PORT),
             "--verbose",
         ]
+        # The GGUF Qwen2.5-VL encoder needs its mmproj.  ComfyUI's FP8
+        # qwen_2.5_vl_7b encoder already contains the vision component, so
+        # set SDC_MMPROJ=none to reproduce that configuration.
+        mmproj = os.environ.get("SDC_MMPROJ", "")
+        if mmproj.lower() not in {"", "0", "false", "none"}:
+            command.extend(["--llm_vision", _model_path("text_encoders", mmproj)])
         print("[sdcpp] starting persistent sd-server", flush=True)
         SERVER = subprocess.Popen(command)
 
