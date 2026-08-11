@@ -44,7 +44,7 @@ def _start_server() -> None:
             return
 
         command = [
-            "/opt/sdcpp/bin/sd-server",
+            "/sd-server",
             "--diffusion-model", _model_path("diffusion_models", os.environ["SDC_TRANSFORMER"]),
             "--vae", _model_path("vae", os.environ["SDC_VAE"]),
             "--llm", _model_path("text_encoders", os.environ["SDC_TEXT_ENCODER"]),

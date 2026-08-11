@@ -1,32 +1,13 @@
-# Dedicated Qwen Image Edit runner.  This deliberately does not inherit from
-# the ComfyUI worker image: stable-diffusion.cpp owns model loading and VRAM.
-FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS build
-
-ARG SDC_VERSION=master
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      build-essential ca-certificates cmake ccache git curl gnupg \
- && mkdir -p /etc/apt/keyrings \
- && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key -o /tmp/node.gpg \
- && gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg /tmp/node.gpg \
- && rm /tmp/node.gpg \
- && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
- && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs \
- && npm install -g pnpm@10.15.1 \
- && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /src/stable-diffusion.cpp
-RUN git clone --depth 1 --recurse-submodules --shallow-submodules --branch "${SDC_VERSION}" https://github.com/leejet/stable-diffusion.cpp.git . \
- && cmake -S . -B build -DSD_CUDA=ON -DGGML_CUDA_FA_ALL_QUANTS=ON \
- && cmake --build build --config Release -j"$(nproc)"
-
-FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04
+# Official precompiled CUDA runner.  `master-cuda` contains sd-cli and
+# sd-server built by stable-diffusion.cpp's own CI, so this endpoint does not
+# compile C++ during a Runpod build.
+FROM ghcr.io/leejet/stable-diffusion.cpp:master-cuda
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      libgomp1 python3 python3-pip \
+      python3 python3-pip \
  && python3 -m pip install --break-system-packages --no-cache-dir runpod requests pillow \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /src/stable-diffusion.cpp/build/bin /opt/sdcpp/bin
 COPY handler_sdcpp.py /app/handler.py
 
 # Files live in the network volume, shared with the existing endpoint.
