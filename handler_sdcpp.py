@@ -120,8 +120,11 @@ def _request_payload(job_input: dict[str, Any]) -> dict[str, Any]:
         "seed": int(job_input.get("seed", -1)),
         "batch_count": 1,
         "auto_resize_ref_image": True,
-        "init_image": image_b64,
-        "ref_images": [],
+        # Qwen Image Edit conditions on reference images (the documented
+        # sd-cli invocation uses --ref-image).  Sending this as init_image
+        # takes the generic IMG2IMG path and loses the Qwen edit conditioning.
+        "init_image": None,
+        "ref_images": [image_b64],
         "sample_params": {
             "scheduler": "discrete",
             "sample_method": "euler",
