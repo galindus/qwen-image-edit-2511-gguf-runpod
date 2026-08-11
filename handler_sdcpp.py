@@ -11,6 +11,7 @@ import base64
 import io
 import json
 import os
+import shlex
 import subprocess
 import threading
 import time
@@ -61,6 +62,18 @@ def _start_server() -> None:
         mmproj = os.environ.get("SDC_MMPROJ", "")
         if mmproj.lower() not in {"", "0", "false", "none"}:
             command.extend(["--llm_vision", _model_path("text_encoders", mmproj)])
+
+        # A 24 GB GPU can complete one resident Qwen Edit request but leaves
+        # too little headroom for the VAE of the next request.  The native
+        # runner's recommended streaming configuration keeps parameters in
+        # system RAM and bounds GPU residency, so a warm worker can drain a
+        # queue reliably.  Set SDC_MEMORY_MODE=resident on larger GPUs.
+        if os.environ.get("SDC_MEMORY_MODE", "stream").lower() == "stream":
+            command.extend(["--offload-to-cpu", "--max-vram", "-1", "--stream-layers"])
+
+        extra_args = os.environ.get("SDC_EXTRA_ARGS", "")
+        if extra_args:
+            command.extend(shlex.split(extra_args))
         print("[sdcpp] starting persistent sd-server", flush=True)
         SERVER = subprocess.Popen(command)
 

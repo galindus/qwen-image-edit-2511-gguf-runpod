@@ -17,6 +17,7 @@ ENV MODEL_ROOT=/runpod-volume/models \
     SDC_STEPS=4 \
     SDC_CFG=1.0 \
     SDC_MAX_SIDE=1536 \
+    SDC_MEMORY_MODE=stream \
     SDC_TRANSFORMER=qwen-image-edit-2511-Q4_K_M.gguf \
     SDC_TEXT_ENCODER=Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf \
     SDC_MMPROJ=Qwen2.5-VL-7B-Instruct-mmproj-BF16.gguf \

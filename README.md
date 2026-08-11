@@ -45,6 +45,11 @@ SDC_TEXT_ENCODER=qwen_2.5_vl_7b_fp8_scaled.safetensors
 SDC_MMPROJ=none
 ```
 
+On a 24 GB GPU the default `SDC_MEMORY_MODE=stream` keeps the worker stable
+across a queue by using the runner's CPU parameter streaming. Set
+`SDC_MEMORY_MODE=resident` only when the complete Qwen Edit pipeline fits in
+VRAM (for example, a larger GPU).
+
 Runpod Serverless ComfyUI worker for Qwen Image Edit 2511 on a 24 GB GPU.
 
 ## Runtime
