@@ -1,5 +1,42 @@
 # Qwen Image Edit 2511 GGUF on Runpod Serverless
 
+## Alternative runner: stable-diffusion.cpp
+
+`Dockerfile.sdcpp` is a second, independent Serverless image for an A/B
+comparison against the ComfyUI endpoint. It runs Qwen through CUDA
+`stable-diffusion.cpp`, loads the model once per worker, and exposes a compact
+Runpod input contract instead of accepting a ComfyUI graph.
+
+Create a **new** endpoint from this same Git repository, select
+`/Dockerfile.sdcpp`, attach the existing network volume, and leave the current
+Comfy endpoint unchanged. It requires the following extra files on that volume:
+
+```text
+models/diffusion_models/qwen-image-edit-2511-Q4_K_M.gguf
+models/text_encoders/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf
+models/text_encoders/Qwen2.5-VL-7B-Instruct-mmproj-BF16.gguf
+models/vae/qwen_image_vae.safetensors
+models/loras/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
+```
+
+Its default is full-GPU Q4, with no CPU model offload. A request is:
+
+```json
+{
+  "input": {
+    "image": "data:image/jpeg;base64,...",
+    "prompt": "Make the back room brighter while preserving the people.",
+    "seed": 42,
+    "steps": 4
+  }
+}
+```
+
+`image` may be a raw base64 string as well. The output defaults to the input
+aspect ratio, capped to a 1536-pixel longest side; set `width` and `height`
+(multiples of 16) to override it. The first request includes model loading;
+compare only subsequent requests with ComfyUI.
+
 Runpod Serverless ComfyUI worker for Qwen Image Edit 2511 on a 24 GB GPU.
 
 ## Runtime
