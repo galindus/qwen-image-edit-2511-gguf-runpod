@@ -11,6 +11,9 @@ Create a separate Runpod endpoint with Dockerfile path `/Dockerfile.nunchaku`,
 a 24 GB NVIDIA GPU and the usual network volume. The default precision detects
 the GPU (`int4` on RTX 30/40 and most datacenter GPUs; `fp4` on Blackwell).
 Override it only if required with `NUNCHAKU_PRECISION=int4` or `fp4`.
+`NUNCHAKU_MEMORY_MODE=model_cpu_offload` is the default for a 24 GB card. It
+moves the VAE and encoder between inference phases, leaving decode headroom;
+`resident` is intended only for GPUs with materially more free VRAM.
 
 Pre-cache models on a temporary Pod with the same volume attached:
 

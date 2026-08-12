@@ -105,10 +105,20 @@ class NunchakuWorker:
         pretouch_pipeline_cpu_tensors(
             self.pipeline, ("text_encoder", "text_encoder_2", "vae", "unet", "transformer")
         )
-        self.pipeline.to("cuda")
+        memory_mode = os.getenv("NUNCHAKU_MEMORY_MODE", "model_cpu_offload")
+        if memory_mode == "resident":
+            self.pipeline.to("cuda")
+        elif memory_mode == "model_cpu_offload":
+            # Nunchaku documents this configuration for GPUs with >18 GB. It
+            # retains the quantized model path but moves VAE/encoder components
+            # between phases so 22 GB usable VRAM has decode headroom.
+            self.pipeline.enable_model_cpu_offload()
+        else:
+            raise RuntimeError("NUNCHAKU_MEMORY_MODE must be resident or model_cpu_offload")
         self.precision = precision
+        self.memory_mode = memory_mode
         self._cleanup()
-        print("[qwen-nunchaku] model ready; quantized weights resident on GPU", flush=True)
+        print(f"[qwen-nunchaku] model ready; memory_mode={memory_mode}", flush=True)
 
     def _cleanup(self) -> dict[str, float]:
         self.torch.cuda.synchronize()
@@ -158,6 +168,7 @@ class NunchakuWorker:
             return {
                 "provider": "qwen-image-edit-2511-lightning-nunchaku",
                 "precision": self.precision,
+                "memory_mode": self.memory_mode,
                 "seed": seed,
                 "width": output.width,
                 "height": output.height,

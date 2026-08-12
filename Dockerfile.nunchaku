@@ -3,6 +3,7 @@ FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     HF_HOME=/runpod-volume/huggingface \
     HF_HUB_ENABLE_HF_TRANSFER=1
 
