@@ -1,5 +1,35 @@
 # Qwen Image Edit 2511 GGUF on Runpod Serverless
 
+## Nunchaku INT4/FP4 runner (24 GB experiment)
+
+`Dockerfile.nunchaku` is a separate direct-Diffusers endpoint for the community
+Nunchaku build of Qwen Image Edit 2511 Lightning. It keeps an SVDQuant INT4
+transformer and INT4 Qwen2.5-VL edit encoder resident in VRAM; it does not use
+disk offload.
+
+Create a separate Runpod endpoint with Dockerfile path `/Dockerfile.nunchaku`,
+a 24 GB NVIDIA GPU and the usual network volume. The default precision detects
+the GPU (`int4` on RTX 30/40 and most datacenter GPUs; `fp4` on Blackwell).
+Override it only if required with `NUNCHAKU_PRECISION=int4` or `fp4`.
+
+Pre-cache models on a temporary Pod with the same volume attached:
+
+```bash
+git clone https://github.com/galindus/qwen-image-edit-2511-gguf-runpod.git
+cd qwen-image-edit-2511-gguf-runpod
+pip install -U huggingface_hub
+python3 download_nunchaku_models.py --cache-dir /runpod-volume/huggingface --precision int4
+```
+
+Request format:
+
+```json
+{"input":{"image":"data:image/jpeg;base64,...","prompt":"...","seed":42,"steps":4}}
+```
+
+This is an A/B experiment: compare the same ten inputs against the Q4 GGUF
+endpoint before making it a production default.
+
 ## Alternative runner: stable-diffusion.cpp
 
 `Dockerfile.sdcpp` is a second, independent Serverless image for an A/B

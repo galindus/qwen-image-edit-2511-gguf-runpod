@@ -1,0 +1,25 @@
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/runpod-volume/huggingface \
+    HF_HUB_ENABLE_HF_TRANSFER=1
+
+# Ubuntu 22.04 supplies Python 3.10, matching the published cu128/Torch 2.11
+# Vitoom-Nunchaku wheel. It includes 2511 community-model support missing from
+# the dormant upstream Nunchaku package.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 python3-pip git \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m pip install --upgrade pip \
+    && python3 -m pip install torch==2.11.* torchvision==0.26.* --index-url https://download.pytorch.org/whl/cu128 \
+    && python3 -m pip install runpod pillow accelerate sentencepiece protobuf safetensors hf_transfer huggingface_hub \
+    && python3 -m pip install git+https://github.com/huggingface/diffusers.git \
+    && python3 -m pip install \
+      https://huggingface.co/tonera/vitoom-nunchaku/resolve/main/nunchaku-1.3.0.dev20260622%2Bcu12.8torch2.11-cp310-cp310-linux_x86_64.whl
+
+WORKDIR /app
+COPY handler_nunchaku.py /app/handler.py
+
+ENTRYPOINT ["python3", "-u", "/app/handler.py"]
