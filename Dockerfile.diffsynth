@@ -1,0 +1,28 @@
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/runpod-volume/huggingface \
+    MODELSCOPE_CACHE=/runpod-volume/modelscope \
+    HF_HUB_ENABLE_HF_TRANSFER=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git python3 python3-pip python3-venv \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+# DiffSynth owns the device lifecycle of the text encoder, DiT and VAE.  This
+# is deliberately a separate image from the ComfyUI and stable-diffusion.cpp
+# workers so the endpoint can be evaluated independently.
+RUN pip install --upgrade pip \
+    && pip install torch==2.10.0 torchvision --index-url https://download.pytorch.org/whl/cu128 \
+    && pip install runpod pillow accelerate transformers sentencepiece safetensors protobuf hf_transfer modelscope \
+    && pip install git+https://github.com/modelscope/DiffSynth-Studio.git
+
+WORKDIR /app
+COPY handler_diffsynth.py /app/handler.py
+
+ENTRYPOINT ["python3", "-u", "/app/handler.py"]
