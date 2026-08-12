@@ -1,39 +1,5 @@
 # Qwen Image Edit 2511 GGUF on Runpod Serverless
 
-## Direct DiffSynth runner (recommended 24 GB memory experiment)
-
-`Dockerfile.diffsynth` and `handler_diffsynth.py` provide a second, independent
-Serverless worker that does **not** use ComfyUI or stable-diffusion.cpp. It uses
-the official Qwen Edit 2511 model, the LightX2V 4-step Lightning LoRA and
-DiffSynth's layer-level VRAM manager.
-
-Select `/Dockerfile.diffsynth` when creating a new Runpod endpoint. Keep a
-100 GB+ volume attached at `/runpod-volume`: the first job downloads roughly
-58 GB of safetensors and future workers reuse that cache. Set `HF_TOKEN` as an
-endpoint secret if Hugging Face access requires it.
-
-The worker serializes jobs and after each result calls
-`pipeline.load_models_to_device([])`, synchronizes CUDA and clears request
-buffers. Its log reports free/allocated/reserved GPU memory after every job;
-this is the check that matters for a 10-job queue.
-
-Useful environment variables:
-
-| Variable | Default | Meaning |
-| --- | --- | --- |
-| `QWEN_VRAM_LIMIT_GB` | GPU capacity minus 2 GB | Maximum model residency. Use `22` on a nominal 24 GB card. |
-| `QWEN_STAGE_DTYPE` | `bf16` | `bf16` preserves quality; `fp8` reduces memory at a small quality cost. |
-| `QWEN_MAX_OUTPUT_PIXELS` | `1048576` | Output cap while keeping original aspect ratio. |
-
-Request payload:
-
-```json
-{"input":{"image":"data:image/jpeg;base64,...","prompt":"...","seed":42,"steps":4}}
-```
-
-For two references, send `images` instead of `image`. This is intentionally a
-separate endpoint for comparison with the GGUF workers below.
-
 ## Alternative runner: stable-diffusion.cpp
 
 `Dockerfile.sdcpp` is a second, independent Serverless image for an A/B
