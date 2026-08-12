@@ -65,6 +65,7 @@ class NunchakuWorker:
         try:
             import torch
             from diffusers import QwenImageEditPlusPipeline
+            from huggingface_hub import hf_hub_download
             from nunchaku import NunchakuQwenEncoderModel, NunchakuQwenImageTransformer2DModel
             from nunchaku.torch_transfer_utils import pretouch_pipeline_cpu_tensors
             from nunchaku.utils import get_precision
@@ -77,8 +78,17 @@ class NunchakuWorker:
         precision = os.getenv("NUNCHAKU_PRECISION") or get_precision()
         if precision not in {"int4", "fp4"}:
             raise RuntimeError("NUNCHAKU_PRECISION must be int4 or fp4")
-        transformer_path = f"{MODEL_REPO}/svdq-{precision}_r32-{MODEL_NAME}.safetensors"
-        text_encoder_path = f"{TEXT_ENCODER_REPO}/svdq-int4-Qwen2.5vl-Nunchaku.safetensors"
+        # This community fork's from_pretrained expects filesystem paths (it
+        # does not resolve Hugging Face repo/file strings itself). hf_hub_download
+        # resolves the already-populated shared-volume cache without redownloading.
+        transformer_path = hf_hub_download(
+            MODEL_REPO,
+            filename=f"svdq-{precision}_r32-{MODEL_NAME}.safetensors",
+        )
+        text_encoder_path = hf_hub_download(
+            TEXT_ENCODER_REPO,
+            filename="svdq-int4-Qwen2.5vl-Nunchaku.safetensors",
+        )
         print(
             f"[qwen-nunchaku] loading {precision} Lightning model on "
             f"{torch.cuda.get_device_name(0)!r}",
