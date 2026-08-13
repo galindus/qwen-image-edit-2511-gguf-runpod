@@ -71,9 +71,19 @@ def _start_server() -> None:
         # cuts / --max-vram.
         memory_mode = os.environ.get("SDC_MEMORY_MODE", "clip_cpu").lower()
         if memory_mode == "clip_cpu":
-            command.append("--clip-on-cpu")
+            command.extend(
+                [
+                    "--backend", "diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cuda0",
+                    "--params-backend", "diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cuda0",
+                ]
+            )
         elif memory_mode == "clip_vae_cpu":
-            command.extend(["--clip-on-cpu", "--vae-on-cpu"])
+            command.extend(
+                [
+                    "--backend", "diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cpu",
+                    "--params-backend", "diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cpu",
+                ]
+            )
         elif memory_mode == "stream":
             command.extend(["--offload-to-cpu", "--max-vram", "-1", "--stream-layers"])
         elif memory_mode != "resident":

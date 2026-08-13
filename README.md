@@ -79,11 +79,13 @@ SDC_TEXT_ENCODER=qwen_2.5_vl_7b_fp8_scaled.safetensors
 SDC_MMPROJ=none
 ```
 
-On a 24 GB GPU the default `SDC_MEMORY_MODE=clip_cpu` keeps the Q4 diffusion
-transformer resident on GPU and runs the Qwen2.5-VL conditioner on CPU. This
-frees roughly 6 GB during denoising and VAE decode. `clip_vae_cpu` additionally
-moves the VAE to CPU if necessary; `resident` is for larger GPUs. `stream` is
-experimental and currently not compatible with Qwen Edit 2511 graph cuts.
+On a 24 GB GPU the default `SDC_MEMORY_MODE=clip_cpu` explicitly sets
+`diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cuda0` for both runtime and
+parameter backends. The Q4 transformer stays resident on GPU while the
+Qwen2.5-VL text and vision conditioner run on CPU, freeing roughly 6 GB during
+denoising and VAE decode. `clip_vae_cpu` additionally moves the VAE to CPU if
+necessary; `resident` is for larger GPUs. `stream` is experimental and currently
+not compatible with Qwen Edit 2511 graph cuts.
 
 Runpod Serverless ComfyUI worker for Qwen Image Edit 2511 on a 24 GB GPU.
 
