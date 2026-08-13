@@ -63,13 +63,23 @@ def _start_server() -> None:
         if mmproj.lower() not in {"", "0", "false", "none"}:
             command.extend(["--llm_vision", _model_path("text_encoders", mmproj)])
 
-        # A 24 GB GPU can complete one resident Qwen Edit request but leaves
-        # too little headroom for the VAE of the next request.  The native
-        # runner's recommended streaming configuration keeps parameters in
-        # system RAM and bounds GPU residency, so a warm worker can drain a
-        # queue reliably.  Set SDC_MEMORY_MODE=resident on larger GPUs.
-        if os.environ.get("SDC_MEMORY_MODE", "stream").lower() == "stream":
+        # Keep the 14 GB Q4 DiT resident on GPU, but run the Qwen2.5-VL
+        # conditioner on CPU. It only runs once per request; this frees ~6 GB
+        # through denoising and VAE decode, avoiding the accumulation observed
+        # with a fully-resident 24 GB worker. `stream` is retained only as an
+        # experimental option: Qwen Edit 2511 currently crashes with ggml graph
+        # cuts / --max-vram.
+        memory_mode = os.environ.get("SDC_MEMORY_MODE", "clip_cpu").lower()
+        if memory_mode == "clip_cpu":
+            command.append("--clip-on-cpu")
+        elif memory_mode == "clip_vae_cpu":
+            command.extend(["--clip-on-cpu", "--vae-on-cpu"])
+        elif memory_mode == "stream":
             command.extend(["--offload-to-cpu", "--max-vram", "-1", "--stream-layers"])
+        elif memory_mode != "resident":
+            raise ValueError(
+                "SDC_MEMORY_MODE must be resident, clip_cpu, clip_vae_cpu, or stream"
+            )
 
         extra_args = os.environ.get("SDC_EXTRA_ARGS", "")
         if extra_args:
