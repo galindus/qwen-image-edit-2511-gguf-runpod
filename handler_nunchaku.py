@@ -102,16 +102,20 @@ class NunchakuWorker:
             transformer=transformer,
             torch_dtype=torch.bfloat16,
         )
-        pretouch_pipeline_cpu_tensors(
-            self.pipeline, ("text_encoder", "text_encoder_2", "vae", "unet", "transformer")
-        )
         memory_mode = os.getenv("NUNCHAKU_MEMORY_MODE", "model_cpu_offload")
         if memory_mode == "resident":
+            # Useful on larger GPUs. Pre-touching avoids page faults only when
+            # every module will immediately become GPU-resident.
+            pretouch_pipeline_cpu_tensors(
+                self.pipeline, ("text_encoder", "text_encoder_2", "vae", "unet", "transformer")
+            )
             self.pipeline.to("cuda")
         elif memory_mode == "model_cpu_offload":
             # Nunchaku documents this configuration for GPUs with >18 GB. It
             # retains the quantized model path but moves VAE/encoder components
-            # between phases so 22 GB usable VRAM has decode headroom.
+            # between phases so 22 GB usable VRAM has decode headroom. Do not
+            # pre-touch all tensors here: it delays cold start by minutes and
+            # does not help this sequential transfer mode.
             self.pipeline.enable_model_cpu_offload()
         else:
             raise RuntimeError("NUNCHAKU_MEMORY_MODE must be resident or model_cpu_offload")
