@@ -102,7 +102,7 @@ class NunchakuWorker:
             transformer=transformer,
             torch_dtype=torch.bfloat16,
         )
-        memory_mode = os.getenv("NUNCHAKU_MEMORY_MODE", "model_cpu_offload")
+        memory_mode = os.getenv("NUNCHAKU_MEMORY_MODE", "hybrid")
         if memory_mode == "resident":
             # Useful on larger GPUs. Pre-touching avoids page faults only when
             # every module will immediately become GPU-resident.
@@ -117,8 +117,19 @@ class NunchakuWorker:
             # pre-touch all tensors here: it delays cold start by minutes and
             # does not help this sequential transfer mode.
             self.pipeline.enable_model_cpu_offload()
+        elif memory_mode == "hybrid":
+            # Keep only the expensive quantized DiT resident. Diffusers then
+            # offloads Qwen2.5-VL and the VAE to host RAM between their short
+            # phases. This avoids moving the 15 GB transformer every request,
+            # while freeing the ~6 GB text encoder before VAE decode.
+            if "transformer" not in self.pipeline._exclude_from_cpu_offload:
+                self.pipeline._exclude_from_cpu_offload.append("transformer")
+            self.pipeline.enable_model_cpu_offload()
+            self.pipeline.transformer.to("cuda")
         else:
-            raise RuntimeError("NUNCHAKU_MEMORY_MODE must be resident or model_cpu_offload")
+            raise RuntimeError(
+                "NUNCHAKU_MEMORY_MODE must be resident, model_cpu_offload, or hybrid"
+            )
         self.precision = precision
         self.memory_mode = memory_mode
         self._cleanup()
