@@ -42,8 +42,9 @@ comparison against the ComfyUI endpoint. It runs Qwen through CUDA
 Runpod input contract instead of accepting a ComfyUI graph.
 
 Create a **new** endpoint from this same Git repository, select
-`/Dockerfile.sdcpp`, attach the existing network volume, and leave the current
-Comfy endpoint unchanged. It requires the following extra files on that volume:
+`/Dockerfile.sdcpp`, and leave the current Comfy endpoint unchanged. The image
+includes the following files, so it requires **no network volume** and can be
+deployed in any compatible Serverless region:
 
 ```text
 models/diffusion_models/qwen-image-edit-2511-Q4_K_M.gguf
@@ -53,7 +54,14 @@ models/vae/qwen_image_vae.safetensors
 models/loras/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
 ```
 
-Its default is full-GPU Q4, with no CPU model offload. A request is:
+The ~20 GB model download is a dedicated Docker build stage. Changing
+`handler_sdcpp.py` or other application configuration reuses that cached stage;
+it downloads again only if `download_sdcpp_models.sh` (the pinned model set) is
+changed, or if Runpod evicts its build cache.
+
+Its default keeps the Q4 diffusion model on GPU and stages the Q4 Qwen2.5-VL
+conditioner from host RAM to CUDA when needed, which fits a 24 GB worker. A
+request is:
 
 ```json
 {

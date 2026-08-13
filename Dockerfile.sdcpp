@@ -1,3 +1,17 @@
+# Model stage deliberately precedes the application image.  Docker caches this
+# independently, so touching handler_sdcpp.py, the runtime dependencies, or
+# the final base image does not make the ~20 GB model download run again.
+FROM debian:bookworm-slim AS model-download
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY download_sdcpp_models.sh /usr/local/bin/download_sdcpp_models
+RUN chmod +x /usr/local/bin/download_sdcpp_models \
+ && MODEL_ROOT=/opt/models /usr/local/bin/download_sdcpp_models \
+ && find /opt/models -type f -printf '%p %s bytes\\n'
+
 # Official precompiled CUDA runner.  `master-cuda` contains sd-cli and
 # sd-server built by stable-diffusion.cpp's own CI, so this endpoint does not
 # compile C++ during a Runpod build.
@@ -8,11 +22,16 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
  && python3 -m pip install --break-system-packages --no-cache-dir runpod requests pillow \
  && rm -rf /var/lib/apt/lists/*
 
+COPY --from=model-download /opt/models /opt/models
+
+# Keep this COPY after the model layer.  Handler-only changes now reuse all
+# model download layers in a cached Docker build.
 COPY handler_sdcpp.py /app/handler.py
 
-# Files live in the network volume, shared with the existing endpoint.
-# Override these paths with endpoint environment variables only if needed.
-ENV MODEL_ROOT=/runpod-volume/models \
+# Models are baked into the image so the endpoint can be deployed in any
+# Serverless region without a network volume. Override MODEL_ROOT only for a
+# deliberate external-model experiment.
+ENV MODEL_ROOT=/opt/models \
     SDC_PORT=8188 \
     SDC_STEPS=4 \
     SDC_CFG=1.0 \
