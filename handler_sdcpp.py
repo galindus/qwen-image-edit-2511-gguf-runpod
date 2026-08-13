@@ -73,14 +73,17 @@ def _start_server() -> None:
         if memory_mode == "clip_cpu":
             command.extend(
                 [
-                    "--backend", "diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cuda0",
+                    # Execute every graph on CUDA. Only the large Qwen2.5-VL
+                    # conditioner weights live in host RAM and are staged to
+                    # CUDA for its short conditioning phase.
+                    "--backend", "cuda0",
                     "--params-backend", "diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cuda0",
                 ]
             )
         elif memory_mode == "clip_vae_cpu":
             command.extend(
                 [
-                    "--backend", "diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cpu",
+                    "--backend", "cuda0",
                     "--params-backend", "diffusion=cuda0,te=cpu,clip_vision=cpu,vae=cpu",
                 ]
             )
