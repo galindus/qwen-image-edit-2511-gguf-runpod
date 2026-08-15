@@ -54,10 +54,11 @@ models/vae/qwen_image_vae.safetensors
 models/loras/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
 ```
 
-The ~20 GB model download is a dedicated Docker build stage. Changing
-`handler_sdcpp.py` or other application configuration reuses that cached stage;
-it downloads again only if `download_sdcpp_models.sh` (the pinned model set) is
-changed, or if Runpod evicts its build cache.
+The ~20 GB model download is a dedicated Docker build stage, split into one
+parallel, cacheable layer per model. Changing `handler_sdcpp.py` or other
+application configuration reuses those layers; it downloads again only if
+`download_sdcpp_models.sh` (the pinned model set) is changed, or if Runpod
+evicts its build cache.
 
 Its default keeps the Q4 diffusion model on GPU and stages the Q4 Qwen2.5-VL
 conditioner from host RAM to CUDA when needed, which fits a 24 GB worker. A

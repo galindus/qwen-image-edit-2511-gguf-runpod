@@ -4,13 +4,20 @@
 FROM debian:bookworm-slim AS model-download
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      ca-certificates curl \
+      aria2 ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 COPY download_sdcpp_models.sh /usr/local/bin/download_sdcpp_models
-RUN chmod +x /usr/local/bin/download_sdcpp_models \
- && MODEL_ROOT=/opt/models /usr/local/bin/download_sdcpp_models \
- && find /opt/models -type f -printf '%p %s bytes\\n'
+RUN chmod +x /usr/local/bin/download_sdcpp_models
+
+# One model per cached layer. A build interruption after a completed model
+# retains its layer and retries only the outstanding file on the next build.
+RUN MODEL_ROOT=/opt/models /usr/local/bin/download_sdcpp_models transformer
+RUN MODEL_ROOT=/opt/models /usr/local/bin/download_sdcpp_models encoder
+RUN MODEL_ROOT=/opt/models /usr/local/bin/download_sdcpp_models mmproj
+RUN MODEL_ROOT=/opt/models /usr/local/bin/download_sdcpp_models vae
+RUN MODEL_ROOT=/opt/models /usr/local/bin/download_sdcpp_models lora
+RUN find /opt/models -type f -printf '%p %s bytes\\n'
 
 # Official precompiled CUDA runner.  `master-cuda` contains sd-cli and
 # sd-server built by stable-diffusion.cpp's own CI, so this endpoint does not
